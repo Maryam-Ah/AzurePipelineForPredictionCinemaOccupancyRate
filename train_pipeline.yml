@@ -1,0 +1,61 @@
+trigger: none
+
+schedules:
+  - cron: "0 12 * * 0"
+    displayName: "Weekly Sunday training pipeline run"
+    branches:
+      include:
+      - master
+    always: true
+
+name: 'training_pipeline'
+jobs:
+  - job: 'training_pipeline_job'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+      - group: KeyVault
+      - group: ProductionEnvVars
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.7.6'
+          architecture: 'x64'
+    
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        displayName: 'Install requirements'
+    
+      - script: |
+          python src/my_custom_package/create_aml_experiment.py
+        displayName: 'Run AML Experiment and Register Model'
+        env:
+          TENANT_ID: $(TenantID)
+          SPN_ID: $(SpnID)
+          SPN_PASSWORD: $(SpnPassword)
+          AML_WORKSPACE_NAME: $(AmlWorkspaceName)
+          RESOURCE_GROUP: $(ResourceGroup)
+          SUBSCRIPTION_ID: $(SubscriptionID)
+
+
+
+# Schedules
+
+# First, the CI trigger is turned off, so that this Pipeline isn’t run every time the code is updated.
+# There is a cron schedule that runs at 00:00 every Sunday on the master branch. Just as with the data pipeline this pipeline is always run, regardless of whether there are code changes, as the data may have changed.
+
+
+
+# Jobs
+
+# As with our previous pipeline, we have set up a pipeline with a single stage, with a single job on an Ubuntu 16.04 base image.
+# Variables are extracted from the variable groups we set up in our resource set up in Azure DevOps.
+
+
+
+# Steps
+
+# After setting the python version, there are only two steps here.
+# First we install the python package requirements on our pipeline compute.
+# After we’ve installed the requirements, we run src/my_custom_package/create_aml_experiment.py, this will submit an Azure ML experiment run. Upon submitting the run, a training script is run on a training compute node and this will train the model and register the resulting model on Azure Machine Learning.

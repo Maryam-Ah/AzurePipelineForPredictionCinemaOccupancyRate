@@ -1,0 +1,74 @@
+trigger:
+  branches:
+    include:
+      - 'master'
+
+name: 'env_pipeline'
+jobs:
+  - job: 'env_pipeline_job'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    variables:
+      - group: KeyVault
+      - group: ProductionEnvVars
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.7.6'
+          architecture: 'x64'
+    
+      - script: |
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools wheel
+        displayName: 'Install setuptools and wheel'
+      
+      - script: |
+          cd src/
+          python setup.py bdist_wheel
+        displayName: 'Create wheel file'
+      
+      - script: |
+          pip install -r requirements.txt
+        displayName: 'Install requirements'
+    
+      - script: |
+          python src/my_custom_package/create_aml_env.py
+        displayName: 'Create and Register Environment'
+        env:
+          TENANT_ID: $(TenantID)
+          SPN_ID: $(SpnID)
+          SPN_PASSWORD: $(SpnPassword)
+          AML_WORKSPACE_NAME: $(AmlWorkspaceName)
+          RESOURCE_GROUP: $(ResourceGroup)
+          SUBSCRIPTION_ID: $(SubscriptionID)
+          
+          
+          
+          
+# Trigger
+
+# we’ll trigger this pipeline upon changes to the master branch as we’ll want to keep our environment up to date given changes to the master branch.
+
+
+# Jobs
+
+# This pipeline  has a single stage, with a single job.
+# The VM image being used to run this pipeline is an Ubuntu 16.04 image.
+# Variables are extracted from the variable groups we set up in our resource set up in Azure DevOps.
+
+
+
+# Steps
+
+# Step 1 – Use python version
+# This step defines which python version for the pipeline to use.
+# Step 2 – Install setuptools and wheel
+# We’ll need to install the setuptools and wheel python packages in order to create a distributable wheel file for our custom python package. The wheel file is required to include our pip installable package in our environment.
+# Step 3 – Create wheel file
+# We change our working directory to the src/ folder and then create the wheel file using:
+# python setup.py bdist_wheel
+# Step 4 – Install requirements
+# We install the project’s requirements in the machine the Azure pipeline is running on.
+# Step 5 – Create and Register Environment
+# We use the python script in src/my_custom_package/create_aml_env.py to create and register the environment.
+# Note at this last step that we are extracting variables from our variable groups and assigning them as environment variables for this script to use.
