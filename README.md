@@ -1,4 +1,4 @@
-# AzurePiplineForPredictionCinamaOccupancyRate
+# AzurePipelineForPredictionCinemaOccupancyRate
 
 
 Azure Pipelines are cloud-hosted pipelines that are fully integrated with Azure DevOps. You can either use a yaml file or a UI-based tool in Azure DevOps to set up your pipelines.
